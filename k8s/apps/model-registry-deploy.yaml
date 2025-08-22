@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-registry
+  namespace: ml-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: model-registry
+  template:
+    metadata:
+      labels:
+        app: model-registry
+    spec:
+      serviceAccountName: model-registry-sa
+      containers:
+        - name: model-registry
+          image: ghcr.io/ORG/enterprise-sec-ml/model-registry:latest
+          ports:
+            - containerPort: 8080
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-registry-svc
+  namespace: ml-platform
+spec:
+  selector:
+    app: model-registry
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP

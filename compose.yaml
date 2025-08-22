@@ -1,0 +1,6 @@
+services:
+  aipoweredsecurityoperationscentersocwithzerotrustarchitecture:
+    image: aipoweredsecurityoperationscentersocwithzerotrustarchitecture
+    build:
+      context: .
+      dockerfile: ./Dockerfile

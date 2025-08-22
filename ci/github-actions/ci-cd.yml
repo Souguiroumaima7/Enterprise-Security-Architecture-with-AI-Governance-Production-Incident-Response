@@ -1,0 +1,36 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v2
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@v10
+      - name: Terraform init & plan
+        run: |
+          cd terraform
+          terraform init
+          terraform plan -var-file=prod.tfvars
+
+  build-and-scan:
+    runs-on: ubuntu-latest
+    needs: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build model-registry image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/model-registry:pr-${{ github.run_number }} ./ai-governance/model-registry
+      - name: Trivy scan
+        run: trivy image ghcr.io/${{ github.repository }}/model-registry:pr-${{ github.run_number }} || true
+      - name: Push to GHCR
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository }}/model-registry:pr-${{ github.run_number }}
